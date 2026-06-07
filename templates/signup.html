@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Create Account{% endblock %}
+
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// ACCOUNT SETUP</div>
+      <h1 class="rx-page-title">CREATE <span class="rx-accent">ACCOUNT</span></h1>
+      <p class="rx-page-sub">Register a new login for the Ride Simulator DSA Engine</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-start" style="min-height: 50vh; padding-top: 2rem;">
+  <div style="width: 100%; max-width: 440px;">
+
+    <div class="rx-form-section rx-animate" style="max-width: 100%;">
+
+      <!-- Person+ icon header -->
+      <div class="text-center mb-4">
+        <div style="
+          width: 60px; height: 60px; margin: 0 auto 1rem;
+          background: var(--amber-glow);
+          border: 1px solid var(--amber-dim);
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+        ">
+          <i class="bi bi-person-plus-fill rx-amber" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="rx-mono" style="color: var(--text-muted); font-size: .65rem; letter-spacing: .1em;">
+          NEW SYSTEM ACCOUNT
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('signup') }}">
+        <div class="mb-4">
+          <label class="rx-field-label">USERNAME</label>
+          <input
+            type="text"
+            name="username"
+            class="rx-input"
+            placeholder="Choose a username"
+            value="{{ prefill_username or '' }}"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="rx-field-label">PASSWORD</label>
+          <div style="position: relative;">
+            <input
+              type="password"
+              name="password"
+              id="passwordField"
+              class="rx-input"
+              placeholder="Choose a password"
+              autocomplete="new-password"
+              style="padding-right: 2.8rem;"
+              required
+            />
+            <button type="button" onclick="togglePassword()"
+              style="
+                position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+                background: none; border: none; cursor: pointer; color: var(--text-muted);
+                padding: 0; line-height: 1;
+              "
+              title="Toggle visibility">
+              <i class="bi bi-eye" id="eyeIcon" style="font-size: .9rem;"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="rx-field-label">CONFIRM PASSWORD</label>
+          <div style="position: relative;">
+            <input
+              type="password"
+              name="confirm_password"
+              id="confirmField"
+              class="rx-input"
+              placeholder="Re-enter your password"
+              autocomplete="new-password"
+              style="padding-right: 2.8rem;"
+              required
+            />
+            <button type="button" onclick="toggleConfirm()"
+              style="
+                position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+                background: none; border: none; cursor: pointer; color: var(--text-muted);
+                padding: 0; line-height: 1;
+              "
+              title="Toggle visibility">
+              <i class="bi bi-eye" id="eyeIcon2" style="font-size: .9rem;"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="rx-btn rx-btn-primary w-100" style="justify-content: center;">
+          <i class="bi bi-person-check"></i> CREATE ACCOUNT
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <span class="rx-mono" style="color: var(--text-muted); font-size: .65rem;">
+          ALREADY HAVE AN ACCOUNT?
+        </span>
+        <a href="{{ url_for('login') }}" class="rx-mono" style="color: var(--amber); font-size: .65rem; margin-left: .5rem; text-decoration: none; letter-spacing: .05em;">
+          SIGN IN &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword() {
+  const f = document.getElementById('passwordField');
+  const i = document.getElementById('eyeIcon');
+  f.type = f.type === 'password' ? 'text' : 'password';
+  i.className = f.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+function toggleConfirm() {
+  const f = document.getElementById('confirmField');
+  const i = document.getElementById('eyeIcon2');
+  f.type = f.type === 'password' ? 'text' : 'password';
+  i.className = f.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
+{% endblock %}

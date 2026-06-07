@@ -39,12 +39,87 @@ GET  /admin                → admin dashboard
 
 from flask import (
     Flask, render_template, request,
-    redirect, url_for, flash, jsonify
+    redirect, url_for, flash, jsonify, session
 )
+from functools import wraps
 from engine_bridge import engine
+from auth import verify_login, register_account, get_all_accounts
 
 app = Flask(__name__)
 app.secret_key = "dsa-ride-booking-secret-key-change-in-production"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#   AUTH HELPERS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def login_required(f):
+    """Decorator: redirect to login page if the user is not authenticated."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            flash("Please log in to access this page.", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#   LOGIN / LOGOUT / SIGNUP
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("logged_in"):
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if verify_login(username, password):
+            session["logged_in"] = True
+            session["username"]   = username
+            flash(f"Welcome back, {username}!", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Invalid username or password.", "danger")
+            return render_template("login.html", prefill_username=username)
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    username = session.get("username", "")
+    session.clear()
+    flash(f"You have been logged out, {username}.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if session.get("logged_in"):
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        username         = request.form.get("username", "").strip()
+        password         = request.form.get("password", "").strip()
+        confirm_password = request.form.get("confirm_password", "").strip()
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template("signup.html", prefill_username=username)
+
+        success, message = register_account(username, password)
+        if success:
+            flash(message + " You can now log in.", "success")
+            return redirect(url_for("login"))
+        else:
+            flash(message, "danger")
+            return render_template("signup.html", prefill_username=username)
+
+    return render_template("signup.html")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -64,6 +139,7 @@ def inject_map_nodes():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/")
+@login_required
 def home():
     """Landing page — shows admin dashboard stats."""
     stats = engine.admin_dashboard()
@@ -75,6 +151,7 @@ def home():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/map")
+@login_required
 def map_view():
     result = engine.get_map()
     if not result["success"]:
@@ -90,6 +167,7 @@ def map_view():
 
 
 @app.route("/map/path", methods=["POST"])
+@login_required
 def map_path():
     from_loc = request.form.get("from", "").strip()
     to_loc   = request.form.get("to",   "").strip()
@@ -115,6 +193,7 @@ def map_path():
 
 
 @app.route("/map/add-road", methods=["POST"])
+@login_required
 def map_add_road():
     from_loc = request.form.get("from", "").strip()
     to_loc   = request.form.get("to",   "").strip()
@@ -138,6 +217,7 @@ def map_add_road():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/users")
+@login_required
 def users_list():
     result = engine.get_users()
     users  = result.get("users", []) if result["success"] else []
@@ -145,6 +225,7 @@ def users_list():
 
 
 @app.route("/users/register", methods=["GET", "POST"])
+@login_required
 def users_register():
     if request.method == "GET":
         return render_template("users_register.html")
@@ -167,6 +248,7 @@ def users_register():
 
 
 @app.route("/users/search", methods=["GET", "POST"])
+@login_required
 def users_search():
     found = None
     if request.method == "POST":
@@ -188,6 +270,7 @@ def users_search():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/drivers")
+@login_required
 def drivers_available():
     result  = engine.get_drivers()
     drivers = result.get("drivers", []) if result["success"] else []
@@ -197,6 +280,7 @@ def drivers_available():
 
 
 @app.route("/drivers/all")
+@login_required
 def drivers_all():
     result  = engine.get_all_drivers()
     drivers = result.get("drivers", []) if result["success"] else []
@@ -206,6 +290,7 @@ def drivers_all():
 
 
 @app.route("/drivers/add", methods=["GET", "POST"])
+@login_required
 def drivers_add():
     if request.method == "GET":
         return render_template("drivers_add.html")
@@ -230,6 +315,7 @@ def drivers_add():
 
 
 @app.route("/drivers/nearby", methods=["GET", "POST"])
+@login_required
 def drivers_nearby():
     nearby = None
     from_loc = ""
@@ -245,6 +331,7 @@ def drivers_nearby():
 
 
 @app.route("/drivers/search", methods=["GET", "POST"])
+@login_required
 def drivers_search():
     found = None
     if request.method == "POST":
@@ -272,6 +359,7 @@ def drivers_search():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/rides")
+@login_required
 def rides_active():
     result = engine.get_active_rides()
     rides  = result.get("rides", []) if result["success"] else []
@@ -279,6 +367,7 @@ def rides_active():
 
 
 @app.route("/rides/book", methods=["GET", "POST"])
+@login_required
 def rides_book():
     if request.method == "GET":
         users_result = engine.get_users()
@@ -308,6 +397,7 @@ def rides_book():
 
 
 @app.route("/rides/<int:ride_id>/cancel", methods=["POST"])
+@login_required
 def rides_cancel(ride_id):
     result = engine.cancel_ride(ride_id)
     if result["success"]:
@@ -318,6 +408,7 @@ def rides_cancel(ride_id):
 
 
 @app.route("/rides/<int:ride_id>/complete", methods=["GET", "POST"])
+@login_required
 def rides_complete(ride_id):
     if request.method == "GET":
         return render_template("rides_complete.html", ride_id=ride_id)
@@ -344,12 +435,14 @@ def rides_complete(ride_id):
 
 
 @app.route("/rides/queue")
+@login_required
 def rides_queue():
     result = engine.get_ride_queue()
     return render_template("rides_queue.html", queue=result)
 
 
 @app.route("/rides/history")
+@login_required
 def rides_history():
     result = engine.get_ride_history()
     rides  = result.get("rides", []) if result["success"] else []
@@ -357,6 +450,7 @@ def rides_history():
 
 
 @app.route("/rides/search", methods=["GET", "POST"])
+@login_required
 def rides_search():
     found = None
     if request.method == "POST":
@@ -378,6 +472,7 @@ def rides_search():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/admin")
+@login_required
 def admin():
     result = engine.admin_dashboard()
     return render_template("admin.html", stats=result)

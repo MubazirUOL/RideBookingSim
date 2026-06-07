@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Login{% endblock %}
+
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// SECURE ACCESS</div>
+      <h1 class="rx-page-title">SYSTEM <span class="rx-accent">LOGIN</span></h1>
+      <p class="rx-page-sub">Authenticate to access the Ride Simulator DSA Engine</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-start" style="min-height: 50vh; padding-top: 2rem;">
+  <div style="width: 100%; max-width: 440px;">
+
+    <!-- Login card -->
+    <div class="rx-form-section rx-animate" style="max-width: 100%;">
+
+      <!-- Lock icon header -->
+      <div class="text-center mb-4">
+        <div style="
+          width: 60px; height: 60px; margin: 0 auto 1rem;
+          background: var(--amber-glow);
+          border: 1px solid var(--amber-dim);
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+        ">
+          <i class="bi bi-lock-fill rx-amber" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="rx-mono" style="color: var(--text-muted); font-size: .65rem; letter-spacing: .1em;">
+          RIDE SIMULATOR DSA &mdash; AUTHENTICATED ACCESS
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="mb-4">
+          <label class="rx-field-label">USERNAME</label>
+          <input
+            type="text"
+            name="username"
+            class="rx-input"
+            placeholder="Enter your username"
+            value="{{ prefill_username or '' }}"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="rx-field-label">PASSWORD</label>
+          <div style="position: relative;">
+            <input
+              type="password"
+              name="password"
+              id="passwordField"
+              class="rx-input"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              style="padding-right: 2.8rem;"
+              required
+            />
+            <button type="button" onclick="togglePassword()"
+              style="
+                position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+                background: none; border: none; cursor: pointer; color: var(--text-muted);
+                padding: 0; line-height: 1;
+              "
+              title="Toggle visibility">
+              <i class="bi bi-eye" id="eyeIcon" style="font-size: .9rem;"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="rx-btn rx-btn-primary w-100" style="justify-content: center;">
+          <i class="bi bi-box-arrow-in-right"></i> LOGIN
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <span class="rx-mono" style="color: var(--text-muted); font-size: .65rem;">
+          NO ACCOUNT?
+        </span>
+        <a href="{{ url_for('signup') }}" class="rx-mono" style="color: var(--amber); font-size: .65rem; margin-left: .5rem; text-decoration: none; letter-spacing: .05em;">
+          CREATE ONE &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Default credentials hint -->
+    <div class="rx-mono text-center mt-3" style="color: var(--text-muted); font-size: .6rem; letter-spacing: .08em;">
+      DEFAULT CREDENTIALS &mdash; USERNAME: <span style="color: var(--amber);">admin</span> &nbsp;/&nbsp; PASSWORD: <span style="color: var(--amber);">admin123</span>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword() {
+  const field = document.getElementById('passwordField');
+  const icon  = document.getElementById('eyeIcon');
+  if (field.type === 'password') {
+    field.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    field.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+}
+</script>
+{% endblock %}
