@@ -1,9 +1,0 @@
-9,User03,Designer,D,O,460,Completed
-8,Mubazir,Developer,A,N,320,Completed
-2,User02,Developer,A,D,180,Completed
-1,Mubazir,Developer,B,D,80,Completed
-3,User03,Designer,C,E,120,Completed
-4,Mubazir,Developer,A,E,160,Completed
-5,tabi,Developer,C,E,120,Completed
-6,User04,Tester,A,E,160,Cancelled
-7,Mubazir,Tester,A,D,180,Active
