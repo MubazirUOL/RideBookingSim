@@ -588,6 +588,7 @@ int main(int argc, char* argv[]) {
     loadDriversFromFile();
     loadRidesFromFile();
     createCityMap();
+    loadRoadsFromFile();  // load any extra roads added via the web app
 
     if (argc < 2) {
         std::cout << err("Usage: engine <command> [json_payload]").dump() << "\n";

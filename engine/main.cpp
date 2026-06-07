@@ -9,6 +9,7 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <set>
 // #include <conio.h>
 using namespace std;
 
@@ -153,6 +154,8 @@ void saveDriversToFile();
 void loadDriversFromFile();
 void saveRidesToFile();
 void loadRidesFromFile();
+void saveRoadsToFile();
+void loadRoadsFromFile();
 
 void adminDashboard();
 
@@ -211,9 +214,14 @@ bool userIdExists(int id) {
    GRAPH / DIJKSTRA
    ============================================================ */
 
+/* Set to true while createCityMap() is running so addRoad()
+   doesn't write to disk for every hardcoded edge. */
+static bool gInitializingMap = false;
+
 void addRoad(const string& u, const string& v, int distance) {
     graph[u].push_back({v, distance});
     graph[v].push_back({u, distance});
+    if (!gInitializingMap) saveRoadsToFile();
 }
 
 // Lets admin add a new road/node at runtime
@@ -232,6 +240,7 @@ void addRoadFromInput() {
 }
 
 void createCityMap() {
+    gInitializingMap = true;
     addRoad("A","B",5);
     addRoad("A","C",2);
     addRoad("B","D",4);
@@ -256,6 +265,7 @@ void createCityMap() {
     addRoad("B","F",10);
     addRoad("C","G",9);
     addRoad("D","I",6);
+    gInitializingMap = false;
 }
 
 void viewCityMap() {
@@ -905,6 +915,62 @@ void searchRideById() {
 /* ============================================================
    FILE I/O
    ============================================================ */
+
+/* roads.txt format — one road per line: FROM,TO,DISTANCE
+   Only extra roads added at runtime are stored here.
+   The base city map (createCityMap) is always loaded from code.
+   On load we skip any edge that already exists to avoid duplicates. */
+
+void saveRoadsToFile() {
+    ofstream file("roads.txt");
+    // Collect all unique edges (u < v lexicographically to avoid duplicates)
+    set<tuple<string,string,int>> written;
+    for (const auto& node : graph) {
+        for (const auto& nb : node.second) {
+            string u = node.first, v = nb.first;
+            int    d = nb.second;
+            if (u > v) swap(u, v);
+            written.insert({u, v, d});
+        }
+    }
+    for (const auto& [u, v, d] : written)
+        file << u << "," << v << "," << d << "\n";
+    file.close();
+}
+
+void loadRoadsFromFile() {
+    ifstream file("roads.txt");
+    if (!file.is_open()) return;
+
+    // Build a set of edges already in the graph (to skip duplicates)
+    set<pair<string,string>> existing;
+    for (const auto& node : graph)
+        for (const auto& nb : node.second) {
+            string u = node.first, v = nb.first;
+            if (u > v) swap(u, v);
+            existing.insert({u, v});
+        }
+
+    string line;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        // Strip \r for Windows line endings
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        stringstream ss(line);
+        string u, v, dstr;
+        getline(ss, u,    ',');
+        getline(ss, v,    ',');
+        getline(ss, dstr, ',');
+        if (u.empty() || v.empty() || dstr.empty()) continue;
+        int d = stoi(dstr);
+        string eu = u, ev = v;
+        if (eu > ev) swap(eu, ev);
+        if (existing.count({eu, ev})) continue; // already loaded
+        addRoad(u, v, d);
+        existing.insert({eu, ev});
+    }
+    file.close();
+}
 
 void saveUsersToFile() {
     ofstream file("users.txt");

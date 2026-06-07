@@ -166,6 +166,21 @@
       </div>
     </div>
 
+    <!-- Edge list (compact) -->
+    <div class="rx-card rx-animate rx-animate-d4">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-list-ul"></i> EDGES</h2></div>
+      <ul class="rx-map-edge-list" style="max-height:200px;overflow-y:auto;">
+        {% for e in edges | sort(attribute='from') %}
+        <li>
+          <span class="rx-map-node-pill">{{ e.from }}</span>
+          <span class="rx-mono rx-muted">—</span>
+          <span class="rx-map-node-pill">{{ e.to }}</span>
+          <span class="rx-map-dist rx-mono">{{ e.distance }} km</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
   </div><!-- /right panel -->
 </div>
 {% endblock %}
