@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — {{ title }}{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// {{ subtitle }}</div>
+      <h1 class="rx-page-title">{{ title | upper | replace(' ','<span class="rx-accent"> </span>') | safe }}</h1>
+    </div>
+    <div class="rx-page-header-actions">
+      <a href="{{ url_for('drivers_add') }}" class="rx-btn rx-btn-primary rx-btn-sm"><i class="bi bi-plus-lg"></i> ADD DRIVER</a>
+      <a href="{{ url_for('drivers_nearby') }}" class="rx-btn rx-btn-outline rx-btn-sm"><i class="bi bi-geo"></i> NEARBY</a>
+      <a href="{{ url_for('drivers_search') }}" class="rx-btn rx-btn-ghost rx-btn-sm"><i class="bi bi-search"></i></a>
+      {% if request.endpoint == 'drivers_available' %}
+        <a href="{{ url_for('drivers_all') }}" class="rx-btn rx-btn-ghost rx-btn-sm">ALL</a>
+      {% else %}
+        <a href="{{ url_for('drivers_available') }}" class="rx-btn rx-btn-ghost rx-btn-sm">AVAILABLE</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+{% if drivers %}
+<div class="rx-table-wrap rx-animate">
+  <table class="rx-table">
+    <thead><tr><th>ID</th><th>NAME</th><th>LOCATION</th><th>RATING</th><th>TOTAL RATINGS</th><th>STATUS</th></tr></thead>
+    <tbody>
+      {% for d in drivers %}
+      <tr>
+        <td class="rx-id-cell">#{{ d.id }}</td>
+        <td><i class="bi bi-person-workspace rx-amber"></i> {{ d.name }}</td>
+        <td><span class="rx-map-node-pill">{{ d.location }}</span></td>
+        <td>
+          <span class="rx-stars">
+            {% for i in range(d.rating | int) %}★{% endfor %}{% for i in range(5 - (d.rating | int)) %}<span class="rx-stars-dim">★</span>{% endfor %}
+          </span>
+          <span class="rx-mono rx-muted" style="font-size:.7rem"> {{ "%.2f"|format(d.rating) }}</span>
+        </td>
+        <td class="rx-mono">{{ d.totalRatings }}</td>
+        <td>
+          {% if d.available %}<span class="rx-badge rx-badge-green"><i class="bi bi-circle-fill"></i> AVAILABLE</span>
+          {% else %}<span class="rx-badge rx-badge-red"><i class="bi bi-circle-fill"></i> ON RIDE</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="rx-empty rx-animate">
+  <i class="bi bi-person-workspace rx-empty-icon"></i>
+  <div class="rx-empty-title">NO DRIVERS FOUND</div>
+  <a href="{{ url_for('drivers_add') }}" class="rx-btn rx-btn-primary mt-3"><i class="bi bi-plus-lg"></i> ADD DRIVER</a>
+</div>
+{% endif %}
+{% endblock %}

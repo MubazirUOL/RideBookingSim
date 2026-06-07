@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Ride Queue{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// FIFO QUEUE</div>
+      <h1 class="rx-page-title">DISPATCH <span class="rx-accent">QUEUE</span></h1>
+      <p class="rx-page-sub">First-In First-Out · {{ queue.count }} ride(s) waiting</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <span class="rx-dsa-tag"><i class="bi bi-arrow-right-circle"></i> QUEUE DATA STRUCTURE</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4 rx-animate">
+  <div class="col-md-5">
+    <div class="rx-stat mb-3">
+      <div class="rx-stat-label">RIDES IN QUEUE</div>
+      <div class="rx-stat-value">{{ queue.count }}</div>
+      <div class="rx-stat-unit">AWAITING PROCESSING</div>
+    </div>
+    <div class="rx-card">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-info-circle"></i> QUEUE BEHAVIOUR</h2></div>
+      <div class="rx-card-body">
+        <p class="rx-mono" style="font-size:.75rem; color:var(--text-secondary); line-height:1.7">
+          New rides are <span class="rx-amber">enqueued</span> (pushed to rear) when booked.<br>
+          Completing a ride <span class="rx-amber">dequeues</span> it (pops from front).<br>
+          Cancellation removes the ride and frees the driver.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    {% if queue.success and queue.count > 0 %}
+    <div class="rx-queue-box">
+      <div class="rx-queue-head">
+        <span class="rx-badge rx-badge-amber"><i class="bi bi-arrow-right"></i> FRONT OF QUEUE</span>
+        <span class="rx-queue-label">NEXT TO PROCESS</span>
+      </div>
+      <div class="p-4">
+        {% set r = queue.next %}
+        <div class="row g-3">
+          <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">RIDE ID</div><div class="rx-display" style="font-size:1.8rem">#{{ r.rideId }}</div></div>
+          <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">STATUS</div><span class="rx-badge rx-badge-blue mt-1 d-inline-block">{{ r.status }}</span></div>
+          <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">PASSENGER</div><div>{{ r.user }}</div></div>
+          <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">DRIVER</div><div>{{ r.driver }}</div></div>
+          <div class="col-4"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">FROM</div><span class="rx-map-node-pill mt-1 d-inline-flex">{{ r.pickup }}</span></div>
+          <div class="col-4"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">TO</div><span class="rx-map-node-pill mt-1 d-inline-flex">{{ r.destination }}</span></div>
+          <div class="col-4"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">FARE</div><div class="rx-mono">RS. {{ r.fare }}</div></div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+          <a href="{{ url_for('rides_complete', ride_id=r.rideId) }}" class="rx-btn rx-btn-primary rx-btn-sm"><i class="bi bi-check2"></i> COMPLETE & DEQUEUE</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="rx-empty"><i class="bi bi-inbox rx-empty-icon"></i><div class="rx-empty-title">QUEUE EMPTY</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

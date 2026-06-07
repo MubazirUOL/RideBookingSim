@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Ride History{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// LIFO STACK</div>
+      <h1 class="rx-page-title">RIDE <span class="rx-accent">HISTORY</span></h1>
+      <p class="rx-page-sub">{{ rides|length }} completed / cancelled · most recent first</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <span class="rx-dsa-tag"><i class="bi bi-stack"></i> STACK DATA STRUCTURE</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+{% if rides %}
+<div class="rx-table-wrap rx-animate">
+  <table class="rx-table">
+    <thead><tr><th>RIDE ID</th><th>PASSENGER</th><th>DRIVER</th><th>FROM</th><th>TO</th><th>FARE (RS.)</th><th>STATUS</th></tr></thead>
+    <tbody>
+      {% for r in rides %}
+      <tr>
+        <td class="rx-id-cell">#{{ r.rideId }}</td>
+        <td>{{ r.user }}</td>
+        <td>{{ r.driver }}</td>
+        <td><span class="rx-map-node-pill">{{ r.pickup }}</span></td>
+        <td><span class="rx-map-node-pill">{{ r.destination }}</span></td>
+        <td class="rx-mono">{{ r.fare }}</td>
+        <td>
+          {% if r.status == 'Completed' %}<span class="rx-badge rx-badge-green">{{ r.status }}</span>
+          {% else %}<span class="rx-badge rx-badge-red">{{ r.status }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="rx-empty rx-animate">
+  <i class="bi bi-clock-history rx-empty-icon"></i>
+  <div class="rx-empty-title">NO HISTORY YET</div>
+  <p class="rx-mono rx-muted">Completed rides will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

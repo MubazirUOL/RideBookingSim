@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Book Ride{% endblock %}
+
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// DISPATCH</div>
+      <h1 class="rx-page-title">BOOK A <span class="rx-accent">RIDE</span></h1>
+      <p class="rx-page-sub">Dijkstra shortest-path · weighted driver scoring</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- FORM -->
+  <div class="col-lg-5">
+    <div class="rx-form-section rx-animate">
+      <div class="rx-section-label mb-4">RIDE DETAILS</div>
+      <form method="POST" action="{{ url_for('rides_book') }}">
+
+        <div class="mb-4">
+          <label class="rx-field-label">USER ID</label>
+          <select name="userId" class="rx-select" required>
+            <option value="">— select user —</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">#{{ u.id }} · {{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="rx-field-label">PICKUP LOCATION</label>
+          <select name="pickup" class="rx-select" required>
+            <option value="">— select pickup —</option>
+            {% for n in map_nodes %}
+            <option value="{{ n }}">{{ n }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="rx-field-label">DESTINATION</label>
+          <select name="destination" class="rx-select" required>
+            <option value="">— select destination —</option>
+            {% for n in map_nodes %}
+            <option value="{{ n }}">{{ n }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="rx-btn rx-btn-primary flex-fill"><i class="bi bi-lightning-charge"></i> DISPATCH RIDE</button>
+          <a href="{{ url_for('home') }}" class="rx-btn rx-btn-ghost">CANCEL</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="col-lg-7">
+    {% if booking and booking.success %}
+    <div class="rx-booking-panel rx-animate">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="rx-badge rx-badge-green"><i class="bi bi-check-circle"></i> RIDE CONFIRMED</span>
+        <span class="rx-dsa-tag"><i class="bi bi-diagram-2"></i> DIJKSTRA</span>
+        <span class="rx-mono rx-muted" style="margin-left:auto">ID #{{ booking.ride.rideId }}</span>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-6">
+          <div class="rx-mono" style="font-size:.62rem; color:var(--amber); letter-spacing:.1em">PASSENGER</div>
+          <div class="rx-display" style="font-size:1.2rem; margin-top:.2rem">{{ booking.ride.user }}</div>
+        </div>
+        <div class="col-6">
+          <div class="rx-mono" style="font-size:.62rem; color:var(--amber); letter-spacing:.1em">DRIVER ASSIGNED</div>
+          <div class="rx-display" style="font-size:1.2rem; margin-top:.2rem">{{ booking.driver.name }}</div>
+          <div class="rx-mono rx-muted">★ {{ "%.1f"|format(booking.driver.rating) }} · ETA {{ booking.driverEtaKm }} km</div>
+        </div>
+        <div class="col-4">
+          <div class="rx-mono" style="font-size:.62rem; color:var(--amber); letter-spacing:.1em">DISTANCE</div>
+          <div class="rx-display" style="font-size:1.6rem">{{ booking.distanceKm }} <span class="rx-mono rx-muted" style="font-size:.75rem">KM</span></div>
+        </div>
+        <div class="col-4">
+          <div class="rx-mono" style="font-size:.62rem; color:var(--amber); letter-spacing:.1em">FARE</div>
+          <div class="rx-display" style="font-size:1.6rem">RS. {{ booking.fare }}</div>
+        </div>
+        <div class="col-4">
+          <div class="rx-mono" style="font-size:.62rem; color:var(--amber); letter-spacing:.1em">QUEUE SIZE</div>
+          <div class="rx-display" style="font-size:1.6rem">{{ booking.queueSize }}</div>
+        </div>
+      </div>
+
+      <!-- Route visualization -->
+      <div class="rx-mono mb-2" style="font-size:.62rem; color:var(--text-muted); letter-spacing:.12em">OPTIMAL ROUTE</div>
+      <div class="rx-route mb-4">
+        {% for node in booking.route %}
+          <span class="rx-route-node">{{ node }}</span>
+          {% if not loop.last %}<span class="rx-route-arrow">→</span>{% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('rides_active') }}" class="rx-btn rx-btn-outline rx-btn-sm"><i class="bi bi-activity"></i> VIEW ACTIVE</a>
+        <form method="POST" action="{{ url_for('rides_complete', ride_id=booking.ride.rideId) }}" class="d-inline">
+          <input type="hidden" name="rating" value="">
+          <button type="submit" class="rx-btn rx-btn-ghost rx-btn-sm"><i class="bi bi-check2"></i> COMPLETE</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="rx-card rx-animate">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-info-circle"></i> HOW IT WORKS</h2></div>
+      <div class="rx-card-body">
+        {% for step, algo, desc in [
+          ('01', 'DIJKSTRA', 'Finds the shortest path from pickup to destination across the city graph'),
+          ('02', 'SCORING',  'Weighs each available driver by distance to pickup + star rating'),
+          ('03', 'DISPATCH', 'Assigns the best-scoring driver, locks them, and pushes ride to FIFO queue'),
+        ] %}
+        <div class="d-flex gap-3 mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}" style="border-color:var(--border) !important">
+          <div class="rx-display rx-amber" style="font-size:2rem; line-height:1; min-width:2.2rem">{{ step }}</div>
+          <div>
+            <div class="rx-dsa-tag mb-1">{{ algo }}</div>
+            <div style="font-size:.88rem; color:var(--text-secondary)">{{ desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

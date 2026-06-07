@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Nearby Drivers{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// SELECTION SORT O(n²)</div>
+      <h1 class="rx-page-title">NEARBY <span class="rx-accent">DRIVERS</span></h1>
+      <p class="rx-page-sub">Sorted by distance to your location</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <span class="rx-dsa-tag"><i class="bi bi-sort-numeric-up"></i> SELECTION SORT</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="rx-form-section rx-animate">
+      <form method="POST">
+        <div class="mb-4">
+          <label class="rx-field-label">YOUR LOCATION</label>
+          <select name="location" class="rx-select" required>
+            <option value="">— select node —</option>
+            {% for n in map_nodes %}<option value="{{ n }}" {% if n == from_loc %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-search"></i> FIND NEARBY</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-8">
+    {% if nearby is not none %}
+      {% if nearby %}
+      <div class="rx-table-wrap rx-animate">
+        <table class="rx-table">
+          <thead><tr><th>RANK</th><th>NAME</th><th>LOCATION</th><th>DISTANCE</th><th>RATING</th></tr></thead>
+          <tbody>
+            {% for d in nearby %}
+            <tr>
+              <td class="rx-id-cell">{{ loop.index }}</td>
+              <td><i class="bi bi-person-workspace rx-amber"></i> {{ d.name }}</td>
+              <td><span class="rx-map-node-pill">{{ d.location }}</span></td>
+              <td><span class="rx-display rx-amber" style="font-size:1.1rem">{{ d.distanceKm }}</span> <span class="rx-mono rx-muted" style="font-size:.7rem">KM</span></td>
+              <td><span class="rx-stars">{% for i in range(d.rating|int) %}★{% endfor %}</span> <span class="rx-mono rx-muted">{{ "%.1f"|format(d.rating) }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="rx-empty rx-animate"><i class="bi bi-geo rx-empty-icon"></i><div class="rx-empty-title">NO DRIVERS REACHABLE</div></div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

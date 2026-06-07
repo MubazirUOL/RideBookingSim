@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Search Driver{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div><div class="rx-page-eyebrow">// LINEAR SEARCH O(n)</div>
+    <h1 class="rx-page-title">SEARCH <span class="rx-accent">DRIVER</span></h1></div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="rx-form-section rx-animate">
+      <form method="POST">
+        <div class="mb-3">
+          <label class="rx-field-label">SEARCH BY</label>
+          <select name="searchBy" id="searchBy" class="rx-select mb-3">
+            <option value="id">Driver ID</option>
+            <option value="name">Name</option>
+          </select>
+          <label class="rx-field-label">QUERY</label>
+          <input type="text" name="query" class="rx-input" placeholder="ID or name..." required />
+        </div>
+        <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-search"></i> SEARCH</button>
+      </form>
+    </div>
+  </div>
+  {% if found %}
+  <div class="col-md-8">
+    <div class="rx-booking-panel rx-animate">
+      <div class="d-flex gap-2 mb-4">
+        <span class="rx-badge rx-badge-amber">DRIVER #{{ found.id }}</span>
+        {% if found.available %}<span class="rx-badge rx-badge-green">AVAILABLE</span>{% else %}<span class="rx-badge rx-badge-red">ON RIDE</span>{% endif %}
+      </div>
+      <div class="row g-3">
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">NAME</div><div class="rx-display" style="font-size:1.4rem">{{ found.name }}</div></div>
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">LOCATION</div><span class="rx-map-node-pill mt-1 d-inline-flex">{{ found.location }}</span></div>
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">RATING</div>
+          <div><span class="rx-stars">{% for i in range(found.rating|int) %}★{% endfor %}</span> <span class="rx-display" style="font-size:1.2rem">{{ "%.2f"|format(found.rating) }}</span></div>
+        </div>
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">TOTAL RATINGS</div><div class="rx-display" style="font-size:1.2rem">{{ found.totalRatings }}</div></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Dashboard{% endblock %}
+
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">REAL-TIME SYSTEM OVERVIEW</div>
+      <h1 class="rx-page-title">RIDE<span class="rx-accent">SIMS</span> DASHBOARD</h1>
+      <p class="rx-page-sub">Real-time dispatch status · C++ DSA engine active</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <a href="{{ url_for('rides_book') }}" class="rx-btn rx-btn-primary"><i class="bi bi-plus-lg"></i> BOOK RIDE</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if stats and stats.success %}
+<!-- Stat grid -->
+<div class="rx-stat-grid mb-4 rx-animate">
+  <div class="rx-stat rx-animate rx-animate-d1">
+    <div class="rx-stat-label">TOTAL USERS</div>
+    <div class="rx-stat-value">{{ stats.totalUsers }}</div>
+    <div class="rx-stat-unit">REGISTERED</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d2">
+    <div class="rx-stat-label">TOTAL DRIVERS</div>
+    <div class="rx-stat-value">{{ stats.totalDrivers }}</div>
+    <div class="rx-stat-unit">IN SYSTEM</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d2">
+    <div class="rx-stat-label">AVAIL. DRIVERS</div>
+    <div class="rx-stat-value rx-green">{{ stats.availableDrivers }}</div>
+    <div class="rx-stat-unit">READY TO DISPATCH</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d3">
+    <div class="rx-stat-label">ACTIVE RIDES</div>
+    <div class="rx-stat-value rx-blue">{{ stats.activeRides }}</div>
+    <div class="rx-stat-unit">IN PROGRESS</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d3">
+    <div class="rx-stat-label">QUEUE DEPTH</div>
+    <div class="rx-stat-value">{{ stats.ridesInQueue }}</div>
+    <div class="rx-stat-unit">FIFO · AWAITING</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d4">
+    <div class="rx-stat-label">COMPLETED</div>
+    <div class="rx-stat-value">{{ stats.completedRides }}</div>
+    <div class="rx-stat-unit">ALL TIME</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d4">
+    <div class="rx-stat-label">REVENUE</div>
+    <div class="rx-stat-value rx-amber" style="font-size:1.8rem">RS.{{ stats.totalRevenue }}</div>
+    <div class="rx-stat-unit">TOTAL COLLECTED</div>
+  </div>
+  <div class="rx-stat rx-animate rx-animate-d5">
+    <div class="rx-stat-label">TOP DRIVER</div>
+    <div class="rx-stat-value" style="font-size:1.2rem; padding-top:.3rem">{{ stats.topRatedDriver }}</div>
+    <div class="rx-stat-unit">★ {{ "%.2f"|format(stats.topRating) }} RATING</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Quick actions -->
+<div class="rx-section-label rx-animate rx-animate-d2">QUICK ACTIONS</div>
+<div class="row g-3 rx-animate rx-animate-d3">
+  {% set actions = [
+    ('rides_book',         'bi-plus-circle',       'BOOK RIDE',        'Dispatch a new ride via Dijkstra routing'),
+    ('rides_active',       'bi-activity',           'ACTIVE RIDES',     'Monitor in-progress dispatches'),
+    ('rides_queue',        'bi-list-ol',            'RIDE QUEUE',       'FIFO dispatch queue state'),
+    ('drivers_available',  'bi-person-workspace',   'DRIVERS',          'Insertion-sorted by rating'),
+    ('map_view',           'bi-diagram-3',          'CITY MAP',         'Graph nodes + shortest path'),
+    ('rides_history',      'bi-clock-history',      'HISTORY',          'Completed ride stack'),
+  ] %}
+  {% for endpoint, icon, label, desc in actions %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <a href="{{ url_for(endpoint) }}" class="rx-card d-block text-decoration-none p-3 h-100">
+      <i class="bi {{ icon }} rx-amber" style="font-size:1.5rem"></i>
+      <div class="rx-display mt-2" style="font-size:.9rem; letter-spacing:.08em; color:var(--text-primary)">{{ label }}</div>
+      <div class="rx-mono mt-1" style="color:var(--text-muted); font-size:.62rem; line-height:1.4">{{ desc }}</div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

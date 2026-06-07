@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Search Ride{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div><div class="rx-page-eyebrow">// LINEAR SEARCH O(n)</div>
+    <h1 class="rx-page-title">SEARCH <span class="rx-accent">RIDE</span></h1></div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="rx-form-section rx-animate">
+      <form method="POST">
+        <div class="mb-4">
+          <label class="rx-field-label">RIDE ID</label>
+          <input type="number" name="rideId" class="rx-input" placeholder="e.g. 3" required />
+        </div>
+        <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-search"></i> SEARCH</button>
+      </form>
+    </div>
+  </div>
+  {% if found %}
+  <div class="col-md-8">
+    <div class="rx-booking-panel rx-animate">
+      <div class="d-flex gap-2 mb-3">
+        <span class="rx-badge rx-badge-amber">RIDE #{{ found.ride.rideId }}</span>
+        <span class="rx-badge {% if found.source == 'active' %}rx-badge-blue{% else %}rx-badge-muted{% endif %}">{{ found.source | upper }}</span>
+      </div>
+      <div class="row g-3">
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">PASSENGER</div><div>{{ found.ride.user }}</div></div>
+        <div class="col-6"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">DRIVER</div><div>{{ found.ride.driver }}</div></div>
+        <div class="col-3"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">FROM</div><span class="rx-map-node-pill">{{ found.ride.pickup }}</span></div>
+        <div class="col-3"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">TO</div><span class="rx-map-node-pill">{{ found.ride.destination }}</span></div>
+        <div class="col-3"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">FARE</div><div class="rx-mono">RS. {{ found.ride.fare }}</div></div>
+        <div class="col-3"><div class="rx-mono" style="font-size:.62rem;color:var(--amber)">STATUS</div>
+          <span class="rx-badge {% if found.ride.status == 'Completed' %}rx-badge-green{% elif found.ride.status == 'Cancelled' %}rx-badge-red{% else %}rx-badge-blue{% endif %}">{{ found.ride.status }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

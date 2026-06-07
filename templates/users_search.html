@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Search User{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div><div class="rx-page-eyebrow">// HASH MAP O(1) LOOKUP</div>
+    <h1 class="rx-page-title">SEARCH <span class="rx-accent">USER</span></h1></div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="rx-form-section rx-animate">
+      <form method="POST">
+        <div class="mb-4">
+          <label class="rx-field-label">USER ID</label>
+          <input type="number" name="userId" class="rx-input" placeholder="e.g. 1" required />
+        </div>
+        <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-search"></i> FIND USER</button>
+      </form>
+    </div>
+  </div>
+  {% if found %}
+  <div class="col-md-8">
+    <div class="rx-booking-panel rx-animate">
+      <div class="rx-badge rx-badge-amber mb-3">USER #{{ found.id }}</div>
+      <div class="rx-display" style="font-size:2rem">{{ found.name }}</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

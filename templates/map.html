@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — City Map{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// WEIGHTED GRAPH · ADJACENCY LIST</div>
+      <h1 class="rx-page-title">CITY <span class="rx-accent">MAP</span></h1>
+      <p class="rx-page-sub">{{ nodes|length }} nodes · {{ edges|length }} edges</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <span class="rx-dsa-tag"><i class="bi bi-diagram-2"></i> DIJKSTRA SHORTEST PATH</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+
+  <!-- Graph visual -->
+  <div class="col-lg-4">
+    <div class="rx-card rx-animate">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-diagram-3"></i> GRAPH EDGES</h2></div>
+      <ul class="rx-map-edge-list">
+        {% for e in edges | sort(attribute='from') %}
+        <li>
+          <span class="rx-map-node-pill">{{ e.from }}</span>
+          <span class="rx-mono rx-muted">—</span>
+          <span class="rx-map-node-pill">{{ e.to }}</span>
+          <span class="rx-map-dist rx-mono">{{ e.distance }} km</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <!-- Node pills -->
+    <div class="rx-card mt-3 rx-animate rx-animate-d2">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-geo"></i> VALID NODES</h2></div>
+      <div class="rx-card-body d-flex flex-wrap gap-2">
+        {% for n in nodes %}<span class="rx-map-node-pill">{{ n }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortest path tool -->
+  <div class="col-lg-4">
+    <div class="rx-card rx-animate rx-animate-d2">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-lightning-charge"></i> SHORTEST PATH</h2></div>
+      <div class="rx-card-body">
+        <form method="POST" action="{{ url_for('map_path') }}">
+          <div class="mb-3">
+            <label class="rx-field-label">FROM</label>
+            <select name="from" class="rx-select" required>
+              {% for n in nodes %}<option value="{{ n }}" {% if from_loc == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="rx-field-label">TO</label>
+            <select name="to" class="rx-select" required>
+              {% for n in nodes %}<option value="{{ n }}" {% if to_loc == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-diagram-2"></i> RUN DIJKSTRA</button>
+        </form>
+
+        {% if path_result %}
+        <hr class="rx-divider">
+        {% if path_result.success %}
+        <div class="rx-dsa-tag mb-3"><i class="bi bi-check-circle"></i> PATH FOUND</div>
+        <div class="rx-route mb-3">
+          {% for node in path_result.path %}
+          <span class="rx-route-node">{{ node }}</span>
+          {% if not loop.last %}<span class="rx-route-arrow">→</span>{% endif %}
+          {% endfor %}
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="rx-mono" style="font-size:.62rem;color:var(--amber)">DISTANCE</div>
+            <div class="rx-display" style="font-size:1.6rem">{{ path_result.distance }} <span class="rx-mono rx-muted" style="font-size:.7rem">KM</span></div>
+          </div>
+          <div class="col-6">
+            <div class="rx-mono" style="font-size:.62rem;color:var(--amber)">EST. FARE</div>
+            <div class="rx-display" style="font-size:1.6rem">RS. {{ path_result.fare }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="rx-badge rx-badge-red"><i class="bi bi-x-circle"></i> {{ path_result.error }}</div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Add road -->
+  <div class="col-lg-4">
+    <div class="rx-card rx-animate rx-animate-d3">
+      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-plus-circle"></i> ADD ROAD</h2></div>
+      <div class="rx-card-body">
+        <form method="POST" action="{{ url_for('map_add_road') }}">
+          <div class="mb-3">
+            <label class="rx-field-label">FROM (NEW OR EXISTING)</label>
+            <input type="text" name="from" class="rx-input" placeholder="e.g. F" required />
+          </div>
+          <div class="mb-3">
+            <label class="rx-field-label">TO (NEW OR EXISTING)</label>
+            <input type="text" name="to" class="rx-input" placeholder="e.g. G" required />
+          </div>
+          <div class="mb-4">
+            <label class="rx-field-label">DISTANCE (KM)</label>
+            <input type="number" name="distance" class="rx-input" min="1" placeholder="e.g. 3" required />
+          </div>
+          <button type="submit" class="rx-btn rx-btn-outline w-100"><i class="bi bi-plus-lg"></i> ADD TO GRAPH</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

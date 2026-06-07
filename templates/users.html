@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Users{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div><div class="rx-page-eyebrow">// HASH MAP O(1) LOOKUP</div>
+    <h1 class="rx-page-title">REGISTERED <span class="rx-accent">USERS</span></h1>
+    <p class="rx-page-sub">{{ users|length }} user(s) in system</p></div>
+    <div class="rx-page-header-actions">
+      <a href="{{ url_for('users_register') }}" class="rx-btn rx-btn-primary rx-btn-sm"><i class="bi bi-person-plus"></i> REGISTER</a>
+      <a href="{{ url_for('users_search') }}" class="rx-btn rx-btn-outline rx-btn-sm"><i class="bi bi-search"></i> SEARCH</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+{% if users %}
+<div class="rx-table-wrap rx-animate">
+  <table class="rx-table">
+    <thead><tr><th>USER ID</th><th>NAME</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td class="rx-id-cell">#{{ u.id }}</td>
+        <td><i class="bi bi-person rx-amber"></i> {{ u.name }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="rx-empty rx-animate">
+  <i class="bi bi-people rx-empty-icon"></i>
+  <div class="rx-empty-title">NO USERS REGISTERED</div>
+  <a href="{{ url_for('users_register') }}" class="rx-btn rx-btn-primary mt-3"><i class="bi bi-person-plus"></i> REGISTER FIRST USER</a>
+</div>
+{% endif %}
+{% endblock %}

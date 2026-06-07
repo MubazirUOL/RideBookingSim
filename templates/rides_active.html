@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Active Rides{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// DISPATCH BOARD</div>
+      <h1 class="rx-page-title">ACTIVE <span class="rx-accent">RIDES</span></h1>
+      <p class="rx-page-sub">{{ rides|length }} ride(s) in progress</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <a href="{{ url_for('rides_book') }}" class="rx-btn rx-btn-primary rx-btn-sm"><i class="bi bi-plus-lg"></i> NEW RIDE</a>
+      <a href="{{ url_for('rides_queue') }}" class="rx-btn rx-btn-outline rx-btn-sm"><i class="bi bi-list-ol"></i> QUEUE</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if rides %}
+<div class="rx-table-wrap rx-animate">
+  <table class="rx-table">
+    <thead>
+      <tr>
+        <th>RIDE ID</th><th>PASSENGER</th><th>DRIVER</th>
+        <th>PICKUP</th><th>DESTINATION</th><th>FARE (RS.)</th><th>STATUS</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rides %}
+      <tr>
+        <td class="rx-id-cell">#{{ r.rideId }}</td>
+        <td>{{ r.user }}</td>
+        <td><i class="bi bi-person-workspace rx-amber"></i> {{ r.driver }}</td>
+        <td><span class="rx-map-node-pill">{{ r.pickup }}</span></td>
+        <td><span class="rx-map-node-pill">{{ r.destination }}</span></td>
+        <td class="rx-mono">{{ r.fare }}</td>
+        <td><span class="rx-badge rx-badge-blue">{{ r.status }}</span></td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="{{ url_for('rides_complete', ride_id=r.rideId) }}" class="rx-btn rx-btn-outline rx-btn-sm"><i class="bi bi-check2"></i> COMPLETE</a>
+            <form method="POST" action="{{ url_for('rides_cancel', ride_id=r.rideId) }}" class="d-inline">
+              <button type="submit" class="rx-btn rx-btn-danger rx-btn-sm" onclick="return confirm('Cancel ride #{{ r.rideId }}?')"><i class="bi bi-x"></i> CANCEL</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="rx-empty rx-animate">
+  <i class="bi bi-inbox rx-empty-icon"></i>
+  <div class="rx-empty-title">NO ACTIVE RIDES</div>
+  <p class="rx-mono rx-muted">Dispatch queue is clear.</p>
+  <a href="{{ url_for('rides_book') }}" class="rx-btn rx-btn-primary mt-3"><i class="bi bi-plus-lg"></i> BOOK FIRST RIDE</a>
+</div>
+{% endif %}
+{% endblock %}

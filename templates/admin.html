@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Admin{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div>
+      <div class="rx-page-eyebrow">// SYSTEM CONTROL</div>
+      <h1 class="rx-page-title">ADMIN <span class="rx-accent">PANEL</span></h1>
+      <p class="rx-page-sub">Full system access · fleet management</p>
+    </div>
+    <div class="rx-page-header-actions">
+      <span class="rx-badge rx-badge-amber"><i class="bi bi-shield-check"></i> ADMIN MODE</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+{% if stats and stats.success %}
+<!-- Stats -->
+<div class="rx-stat-grid mb-4 rx-animate">
+  <div class="rx-stat"><div class="rx-stat-label">TOTAL USERS</div><div class="rx-stat-value">{{ stats.totalUsers }}</div></div>
+  <div class="rx-stat rx-animate-d1"><div class="rx-stat-label">TOTAL DRIVERS</div><div class="rx-stat-value">{{ stats.totalDrivers }}</div></div>
+  <div class="rx-stat rx-animate-d2"><div class="rx-stat-label">AVAIL. DRIVERS</div><div class="rx-stat-value rx-green">{{ stats.availableDrivers }}</div></div>
+  <div class="rx-stat rx-animate-d2"><div class="rx-stat-label">ACTIVE RIDES</div><div class="rx-stat-value rx-blue">{{ stats.activeRides }}</div></div>
+  <div class="rx-stat rx-animate-d3"><div class="rx-stat-label">QUEUE DEPTH</div><div class="rx-stat-value">{{ stats.ridesInQueue }}</div></div>
+  <div class="rx-stat rx-animate-d3"><div class="rx-stat-label">COMPLETED</div><div class="rx-stat-value">{{ stats.completedRides }}</div></div>
+  <div class="rx-stat rx-animate-d4"><div class="rx-stat-label">REVENUE</div><div class="rx-stat-value" style="font-size:1.6rem">RS.{{ stats.totalRevenue }}</div></div>
+  <div class="rx-stat rx-animate-d5">
+    <div class="rx-stat-label">TOP DRIVER</div>
+    <div class="rx-stat-value" style="font-size:1rem; padding-top:.4rem">{{ stats.topRatedDriver }}</div>
+    <div class="rx-stat-unit">★ {{ "%.2f"|format(stats.topRating) }}</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Admin actions grid -->
+<div class="rx-section-label rx-animate rx-animate-d3">MANAGEMENT ACTIONS</div>
+<div class="row g-3 rx-animate rx-animate-d4">
+  {% set admin_links = [
+    ('users_register',    'bi-person-plus',       'REGISTER USER',    'Add new passenger to system'),
+    ('users_list',        'bi-people',             'ALL USERS',        'View registered passengers'),
+    ('drivers_add',       'bi-person-workspace',   'ADD DRIVER',       'Onboard new driver'),
+    ('drivers_all',       'bi-list-check',         'ALL DRIVERS',      'View full driver roster'),
+    ('rides_active',      'bi-activity',           'ACTIVE RIDES',     'Monitor live dispatches'),
+    ('rides_queue',       'bi-list-ol',            'QUEUE STATE',      'FIFO dispatch queue'),
+    ('rides_history',     'bi-clock-history',      'RIDE HISTORY',     'Completed / cancelled stack'),
+    ('map_view',          'bi-diagram-3',          'MAP / GRAPH',      'City graph + add roads'),
+  ] %}
+  {% for ep, icon, label, desc in admin_links %}
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for(ep) }}" class="rx-card d-block text-decoration-none p-3 h-100">
+      <i class="bi {{ icon }} rx-amber" style="font-size:1.4rem"></i>
+      <div class="rx-display mt-2" style="font-size:.9rem; letter-spacing:.08em; color:var(--text-primary)">{{ label }}</div>
+      <div class="rx-mono mt-1" style="color:var(--text-muted); font-size:.62rem; line-height:1.4">{{ desc }}</div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- DSA reference -->
+<div class="rx-section-label rx-animate" style="margin-top:2.5rem">DSA ALGORITHMS ACTIVE</div>
+<div class="row g-3 rx-animate">
+  {% for algo, struct, use in [
+    ('DIJKSTRA', "O((V+E) log V)", 'Shortest route computation on every booking'),
+    ('INSERTION SORT', 'O(n²)', 'Driver list sorted by rating descending'),
+    ('SELECTION SORT', 'O(n²)', 'Nearby drivers sorted by distance ascending'),
+    ('QUEUE (FIFO)', 'O(1) enqueue/dequeue', 'Ride dispatch ordering'),
+    ('STACK (LIFO)', 'O(1) push/pop', 'Ride history — most recent first'),
+    ('HASH MAP', 'O(1) avg lookup', 'User ID → User object'),
+  ] %}
+  <div class="col-md-4">
+    <div class="rx-card p-3">
+      <div class="rx-dsa-tag mb-2">{{ algo }}</div>
+      <div class="rx-mono" style="font-size:.68rem; color:var(--text-muted)">{{ struct }}</div>
+      <div style="font-size:.82rem; color:var(--text-secondary); margin-top:.3rem">{{ use }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

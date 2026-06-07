@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}RIDE SIM — Add Driver{% endblock %}
+{% block page_header %}
+<div class="rx-page-header">
+  <div class="rx-page-header-inner">
+    <div><div class="rx-page-eyebrow">// FLEET MANAGEMENT</div>
+    <h1 class="rx-page-title">ADD <span class="rx-accent">DRIVER</span></h1></div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="rx-form-section rx-animate">
+  <form method="POST">
+    <div class="row g-4">
+      <div class="col-6">
+        <label class="rx-field-label">DRIVER ID</label>
+        <input type="number" name="driverId" class="rx-input" placeholder="e.g. 10" required />
+      </div>
+      <div class="col-6">
+        <label class="rx-field-label">FULL NAME</label>
+        <input type="text" name="name" class="rx-input" placeholder="e.g. Ali Hassan" required />
+      </div>
+      <div class="col-6">
+        <label class="rx-field-label">CURRENT LOCATION</label>
+        <select name="location" class="rx-select" required>
+          <option value="">— select node —</option>
+          {% for n in map_nodes %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6">
+        <label class="rx-field-label">INITIAL RATING (0.0 – 5.0)</label>
+        <input type="number" name="rating" class="rx-input" step="0.1" min="0" max="5" placeholder="e.g. 4.5" required />
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="rx-btn rx-btn-primary"><i class="bi bi-person-plus"></i> REGISTER DRIVER</button>
+      <a href="{{ url_for('drivers_available') }}" class="rx-btn rx-btn-ghost">BACK</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
