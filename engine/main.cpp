@@ -238,6 +238,24 @@ void createCityMap() {
     addRoad("C","D",7);
     addRoad("C","E",6);
     addRoad("D","E",1);
+    addRoad("A","F",8);
+    addRoad("B","E",7);
+    addRoad("B","G",6);
+    addRoad("C","F",4);
+    addRoad("D","G",3);
+    addRoad("D","H",9);
+    addRoad("E","H",5);
+    addRoad("E","I",8);
+    addRoad("F","G",2);
+    addRoad("F","J",7);
+    addRoad("G","I",4);
+    addRoad("G","J",6);
+    addRoad("H","I",3);
+    addRoad("H","J",5);
+    addRoad("I","J",2);
+    addRoad("B","F",10);
+    addRoad("C","G",9);
+    addRoad("D","I",6);
 }
 
 void viewCityMap() {

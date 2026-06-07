@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title %}RIDE SIM — City Map{% endblock %}
+
 {% block page_header %}
 <div class="rx-page-header">
   <div class="rx-page-header-inner">
     <div>
       <div class="rx-page-eyebrow">// WEIGHTED GRAPH · ADJACENCY LIST</div>
       <h1 class="rx-page-title">CITY <span class="rx-accent">MAP</span></h1>
-      <p class="rx-page-sub">{{ nodes|length }} nodes · {{ edges|length }} edges</p>
+      <p class="rx-page-sub" id="graphStats">{{ nodes|length }} nodes · {{ edges|length }} edges</p>
     </div>
     <div class="rx-page-header-actions">
       <span class="rx-dsa-tag"><i class="bi bi-diagram-2"></i> DIJKSTRA SHORTEST PATH</span>
@@ -14,52 +15,106 @@
   </div>
 </div>
 {% endblock %}
+
 {% block content %}
+
+<!-- Pass server data to JS -->
+<script>
+  const GRAPH_NODES = {{ nodes | tojson }};
+  const GRAPH_EDGES = {{ edges | tojson }};
+  const PATH_RESULT = {{ path_result | tojson if path_result else 'null' }};
+  const FROM_LOC    = {{ from_loc | tojson if from_loc is defined and from_loc else 'null' }};
+  const TO_LOC      = {{ to_loc   | tojson if to_loc   is defined and to_loc   else 'null' }};
+</script>
+
 <div class="row g-4">
 
-  <!-- Graph visual -->
-  <div class="col-lg-4">
-    <div class="rx-card rx-animate">
-      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-diagram-3"></i> GRAPH EDGES</h2></div>
-      <ul class="rx-map-edge-list">
-        {% for e in edges | sort(attribute='from') %}
-        <li>
-          <span class="rx-map-node-pill">{{ e.from }}</span>
-          <span class="rx-mono rx-muted">—</span>
-          <span class="rx-map-node-pill">{{ e.to }}</span>
-          <span class="rx-map-dist rx-mono">{{ e.distance }} km</span>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    <!-- Node pills -->
-    <div class="rx-card mt-3 rx-animate rx-animate-d2">
-      <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-geo"></i> VALID NODES</h2></div>
-      <div class="rx-card-body d-flex flex-wrap gap-2">
-        {% for n in nodes %}<span class="rx-map-node-pill">{{ n }}</span>{% endfor %}
+  <!-- ═══ LEFT PANEL: D3 Canvas ═════════════════════════════════════════ -->
+  <div class="col-lg-8">
+    <div class="rx-card rx-animate" style="position:relative; overflow:hidden;">
+
+      <!-- Canvas toolbar -->
+      <div class="rx-card-header d-flex align-items-center justify-content-between" style="flex-wrap:wrap; gap:.5rem;">
+        <h2 class="rx-card-title"><i class="bi bi-diagram-3"></i> INTERACTIVE GRAPH</h2>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="rx-mono" id="algoStatus" style="font-size:.6rem; color:var(--text-muted); letter-spacing:.1em;">IDLE</span>
+          <button class="rx-btn rx-btn-ghost rx-btn-sm" id="btnResetZoom" title="Reset zoom">
+            <i class="bi bi-arrows-fullscreen"></i>
+          </button>
+          <button class="rx-btn rx-btn-ghost rx-btn-sm" id="btnClearPath" title="Clear path">
+            <i class="bi bi-x-lg"></i> CLEAR
+          </button>
+        </div>
+      </div>
+
+      <!-- SVG canvas -->
+      <div id="mapCanvas" style="width:100%; height:520px; background:var(--bg-base); position:relative; overflow:hidden; cursor:grab;">
+        <svg id="graphSvg" style="width:100%;height:100%;"></svg>
+
+        <!-- Legend overlay -->
+        <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:5px;pointer-events:none;">
+          <div class="rx-mono" style="font-size:.55rem;color:var(--text-muted);letter-spacing:.1em;margin-bottom:2px;">LEGEND</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:20px;height:2px;background:#2a2a2a;border:1px solid #333;"></div>
+            <span class="rx-mono" style="font-size:.55rem;color:var(--text-muted);">ROAD</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:20px;height:2px;background:#f5a623;box-shadow:0 0 6px #f5a623;"></div>
+            <span class="rx-mono" style="font-size:.55rem;color:var(--amber);">EXPLORED</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:20px;height:2px;background:#39d353;box-shadow:0 0 8px #39d353;"></div>
+            <span class="rx-mono" style="font-size:.55rem;color:var(--green);">SHORTEST PATH</span>
+          </div>
+        </div>
+
+        <!-- Zoom hint -->
+        <div style="position:absolute;bottom:12px;right:12px;pointer-events:none;">
+          <span class="rx-mono" style="font-size:.5rem;color:var(--text-muted);letter-spacing:.08em;">SCROLL TO ZOOM · DRAG TO PAN</span>
+        </div>
+      </div>
+
+      <!-- Step-by-step log -->
+      <div id="algoLog" style="
+        background:var(--bg-base);
+        border-top:1px solid var(--border);
+        padding:.65rem 1rem;
+        height:90px;
+        overflow-y:auto;
+        font-family:'JetBrains Mono',monospace;
+        font-size:.62rem;
+        color:var(--text-muted);
+        letter-spacing:.04em;
+        scroll-behavior:smooth;
+      ">
+        <span style="color:var(--text-muted);">// Algorithm log will appear here when you run Dijkstra...</span>
       </div>
     </div>
   </div>
 
-  <!-- Shortest path tool -->
-  <div class="col-lg-4">
+  <!-- ═══ RIGHT PANEL: Controls ══════════════════════════════════════════ -->
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <!-- Shortest Path Tool -->
     <div class="rx-card rx-animate rx-animate-d2">
       <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-lightning-charge"></i> SHORTEST PATH</h2></div>
       <div class="rx-card-body">
-        <form method="POST" action="{{ url_for('map_path') }}">
+        <form method="POST" action="{{ url_for('map_path') }}" id="pathForm">
           <div class="mb-3">
             <label class="rx-field-label">FROM</label>
-            <select name="from" class="rx-select" required>
+            <select name="from" id="selFrom" class="rx-select" required>
               {% for n in nodes %}<option value="{{ n }}" {% if from_loc == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
             </select>
           </div>
           <div class="mb-4">
             <label class="rx-field-label">TO</label>
-            <select name="to" class="rx-select" required>
+            <select name="to" id="selTo" class="rx-select" required>
               {% for n in nodes %}<option value="{{ n }}" {% if to_loc == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
             </select>
           </div>
-          <button type="submit" class="rx-btn rx-btn-primary w-100"><i class="bi bi-diagram-2"></i> RUN DIJKSTRA</button>
+          <button type="submit" class="rx-btn rx-btn-primary w-100" id="btnDijkstra">
+            <i class="bi bi-diagram-2"></i> RUN DIJKSTRA
+          </button>
         </form>
 
         {% if path_result %}
@@ -88,10 +143,8 @@
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <!-- Add road -->
-  <div class="col-lg-4">
+    <!-- Add Road -->
     <div class="rx-card rx-animate rx-animate-d3">
       <div class="rx-card-header"><h2 class="rx-card-title"><i class="bi bi-plus-circle"></i> ADD ROAD</h2></div>
       <div class="rx-card-body">
@@ -112,7 +165,487 @@
         </form>
       </div>
     </div>
-  </div>
 
+  </div><!-- /right panel -->
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- D3.js -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   RIDE SIM — Animated D3 Graph with Dijkstra Step Visualisation
+   ═══════════════════════════════════════════════════════════════════ */
+
+// ── Colour palette (mirrors CSS vars) ────────────────────────────
+const C = {
+  bg:          '#0d0d0d',
+  surface:     '#141414',
+  raised:      '#1c1c1c',
+  border:      '#2a2a2a',
+  amber:       '#f5a623',
+  amberDim:    '#c4841a',
+  amberGlow:   'rgba(245,166,35,0.18)',
+  green:       '#39d353',
+  blue:        '#4fa3f5',
+  red:         '#f04f4f',
+  text:        '#e8e8e8',
+  muted:       '#555',
+};
+
+// ── Graph data from Flask ─────────────────────────────────────────
+const rawNodes = GRAPH_NODES;   // ["A","B","C",...]
+const rawEdges = GRAPH_EDGES;   // [{from,to,distance},...]
+
+// ── Build adjacency for client-side Dijkstra ─────────────────────
+function buildAdj(nodes, edges) {
+  const adj = {};
+  nodes.forEach(n => adj[n] = []);
+  edges.forEach(e => {
+    adj[e.from].push({ to: e.to,   w: e.distance });
+    adj[e.to  ].push({ to: e.from, w: e.distance });
+  });
+  return adj;
+}
+
+/* ── Client-side Dijkstra that records every step ─────────────────
+   Returns: { steps, dist, prev }
+   Each step: { type:'visit'|'relax'|'done', node, via?, dist, allDist }
+*/
+function dijkstraSteps(adj, src, dst) {
+  const INF = Infinity;
+  const dist = {}, prev = {}, visited = new Set();
+  Object.keys(adj).forEach(n => { dist[n] = INF; prev[n] = null; });
+  dist[src] = 0;
+
+  // Min-heap via sorted array (small graph — fine)
+  const pq = [{ node: src, d: 0 }];
+  const steps = [];
+
+  const snap = () => ({ ...dist });
+
+  steps.push({ type: 'init', node: src, allDist: snap() });
+
+  while (pq.length) {
+    pq.sort((a, b) => a.d - b.d);
+    const { node: u, d: du } = pq.shift();
+    if (visited.has(u)) continue;
+    visited.add(u);
+
+    steps.push({ type: 'visit', node: u, allDist: snap() });
+    if (u === dst) { steps.push({ type: 'done', node: u, allDist: snap() }); break; }
+
+    for (const { to: v, w } of adj[u]) {
+      if (visited.has(v)) continue;
+      const nd = du + w;
+      if (nd < dist[v]) {
+        dist[v] = nd;
+        prev[v]  = u;
+        pq.push({ node: v, d: nd });
+        steps.push({ type: 'relax', node: v, via: u, newDist: nd, allDist: snap() });
+      }
+    }
+  }
+  return { steps, dist, prev };
+}
+
+function reconstructPath(prev, src, dst) {
+  const path = [];
+  let cur = dst;
+  while (cur) { path.unshift(cur); cur = prev[cur]; }
+  return path[0] === src ? path : [];
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   D3 GRAPH RENDERER
+   ───────────────────────────────────────────────────────────────── */
+const svg    = d3.select('#graphSvg');
+const canvas = document.getElementById('mapCanvas');
+
+let width  = canvas.clientWidth  || 700;
+let height = canvas.clientHeight || 520;
+
+// Defs: glows & arrow marker
+const defs = svg.append('defs');
+
+function makeGlow(id, color, stdDev) {
+  const f = defs.append('filter').attr('id', id).attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+  f.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', stdDev).attr('result', 'blur');
+  f.append('feComposite').attr('in', 'SourceGraphic').attr('in2', 'blur').attr('operator', 'over');
+}
+makeGlow('glowAmber', C.amber,  4);
+makeGlow('glowGreen', C.green,  5);
+makeGlow('glowBlue',  C.blue,   3);
+
+// Zoom & pan
+const zoomG = svg.append('g').attr('class', 'zoom-root');
+const zoom  = d3.zoom().scaleExtent([0.3, 4]).on('zoom', e => {
+  zoomG.attr('transform', e.transform);
+  canvas.style.cursor = 'grabbing';
+}).on('end', () => { canvas.style.cursor = 'grab'; });
+svg.call(zoom);
+
+// Edge layer → Node layer → Label layer (z-order)
+const edgeG   = zoomG.append('g').attr('class', 'edges');
+const labelEG = zoomG.append('g').attr('class', 'edge-labels');
+const nodeG   = zoomG.append('g').attr('class', 'nodes');
+const labelNG = zoomG.append('g').attr('class', 'node-labels');
+
+// ── Layout: force-directed ────────────────────────────────────────
+const nodeData = rawNodes.map(id => ({ id }));
+const linkData = rawEdges.map(e => ({ source: e.from, target: e.to, distance: e.distance }));
+
+const sim = d3.forceSimulation(nodeData)
+  .force('link',    d3.forceLink(linkData).id(d => d.id).distance(d => Math.max(80, d.distance * 2.2)))
+  .force('charge',  d3.forceManyBody().strength(-320))
+  .force('center',  d3.forceCenter(width / 2, height / 2))
+  .force('collide', d3.forceCollide(40))
+  .alphaDecay(0.025);
+
+// ── Draw edges ────────────────────────────────────────────────────
+const edgeSel = edgeG.selectAll('line')
+  .data(linkData).enter().append('line')
+  .attr('class', 'graph-edge')
+  .attr('stroke', C.border)
+  .attr('stroke-width', 2)
+  .attr('stroke-linecap', 'round');
+
+// Edge distance labels
+const edgeLabelSel = labelEG.selectAll('text')
+  .data(linkData).enter().append('text')
+  .attr('text-anchor', 'middle')
+  .attr('font-family', 'JetBrains Mono, monospace')
+  .attr('font-size', 9)
+  .attr('fill', C.muted)
+  .text(d => d.distance + 'km');
+
+// ── Draw nodes ────────────────────────────────────────────────────
+const NODE_R = 20;
+
+const nodeGroup = nodeG.selectAll('g')
+  .data(nodeData).enter().append('g')
+  .attr('class', 'graph-node')
+  .style('cursor', 'pointer')
+  .call(d3.drag()
+    .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.15).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on('end',   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+  )
+  .on('click', (e, d) => onNodeClick(d.id));
+
+// Outer glow ring
+nodeGroup.append('circle')
+  .attr('r', NODE_R + 5)
+  .attr('fill', 'none')
+  .attr('stroke', C.amberGlow)
+  .attr('stroke-width', 1)
+  .attr('class', 'node-ring')
+  .attr('opacity', 0);
+
+// Main circle
+nodeGroup.append('circle')
+  .attr('r', NODE_R)
+  .attr('fill', C.raised)
+  .attr('stroke', C.border)
+  .attr('stroke-width', 1.5)
+  .attr('class', 'node-circle');
+
+// Node label
+nodeGroup.append('text')
+  .attr('text-anchor', 'middle')
+  .attr('dominant-baseline', 'central')
+  .attr('font-family', 'Barlow Condensed, sans-serif')
+  .attr('font-size', 14)
+  .attr('font-weight', 700)
+  .attr('letter-spacing', 1)
+  .attr('fill', C.text)
+  .attr('pointer-events', 'none')
+  .text(d => d.id);
+
+// Distance badge below node
+const nodeLabelSel = labelNG.selectAll('text')
+  .data(nodeData).enter().append('text')
+  .attr('text-anchor', 'middle')
+  .attr('font-family', 'JetBrains Mono, monospace')
+  .attr('font-size', 8)
+  .attr('fill', C.muted)
+  .attr('dy', NODE_R + 13)
+  .attr('class', 'node-dist-label')
+  .text('');
+
+// ── Force tick ───────────────────────────────────────────────────
+sim.on('tick', () => {
+  edgeSel
+    .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+
+  edgeLabelSel
+    .attr('x', d => (d.source.x + d.target.x) / 2)
+    .attr('y', d => (d.source.y + d.target.y) / 2 - 6);
+
+  nodeGroup.attr('transform', d => `translate(${d.x},${d.y})`);
+
+  nodeLabelSel
+    .attr('x', d => d.x)
+    .attr('y', d => d.y);
+});
+
+// ── Node click: set FROM/TO selects ─────────────────────────────
+let clickState = 0; // 0 = pick FROM, 1 = pick TO
+function onNodeClick(id) {
+  const selFrom = document.getElementById('selFrom');
+  const selTo   = document.getElementById('selTo');
+  if (!selFrom || !selTo) return;
+  if (clickState === 0) {
+    selFrom.value = id;
+    clickState = 1;
+    setStatus(`FROM: ${id} — now click destination node`);
+  } else {
+    selTo.value = id;
+    clickState = 0;
+    setStatus(`FROM: ${selFrom.value} → TO: ${id} — press RUN DIJKSTRA`);
+  }
+}
+
+/* ── Animation state ─────────────────────────────────────────────
+   node state: 'idle' | 'queued' | 'visited' | 'path'
+   edge state: 'idle' | 'exploring' | 'path'
+*/
+let nodeState = {};
+let edgeState = {};
+let animTimer = null;
+
+function resetVisual() {
+  nodeData.forEach(n => { nodeState[n.id] = 'idle'; });
+  linkData.forEach((_,i) => { edgeState[i] = 'idle'; });
+  applyNodeStyles();
+  applyEdgeStyles();
+  nodeLabelSel.text('');
+}
+
+function applyNodeStyles() {
+  nodeGroup.select('.node-circle').attr('fill', d => {
+    switch (nodeState[d.id]) {
+      case 'src':     return C.amber;
+      case 'dst':     return C.blue;
+      case 'queued':  return 'rgba(245,166,35,0.25)';
+      case 'visited': return 'rgba(245,166,35,0.5)';
+      case 'path':    return C.green;
+      default:        return C.raised;
+    }
+  }).attr('stroke', d => {
+    switch (nodeState[d.id]) {
+      case 'src':     return C.amber;
+      case 'dst':     return C.blue;
+      case 'queued':  return C.amberDim;
+      case 'visited': return C.amber;
+      case 'path':    return C.green;
+      default:        return C.border;
+    }
+  }).attr('stroke-width', d => ['src','dst','path'].includes(nodeState[d.id]) ? 2.5 : 1.5)
+    .attr('filter', d => {
+      if (nodeState[d.id] === 'path')    return 'url(#glowGreen)';
+      if (nodeState[d.id] === 'src')     return 'url(#glowAmber)';
+      if (nodeState[d.id] === 'dst')     return 'url(#glowBlue)';
+      if (nodeState[d.id] === 'visited') return 'url(#glowAmber)';
+      return null;
+    });
+
+  nodeGroup.select('.node-ring').attr('opacity', d =>
+    ['src','dst','path','visited'].includes(nodeState[d.id]) ? 1 : 0
+  ).attr('stroke', d => {
+    if (nodeState[d.id] === 'path') return 'rgba(57,211,83,0.3)';
+    if (nodeState[d.id] === 'dst')  return 'rgba(79,163,245,0.3)';
+    return C.amberGlow;
+  });
+
+  nodeGroup.select('text').attr('fill', d => {
+    if (nodeState[d.id] === 'path') return '#0d0d0d';
+    if (nodeState[d.id] === 'src')  return '#0d0d0d';
+    if (nodeState[d.id] === 'dst')  return '#0d0d0d';
+    return C.text;
+  });
+}
+
+function applyEdgeStyles() {
+  edgeSel.attr('stroke', (d, i) => {
+    switch (edgeState[i]) {
+      case 'exploring': return C.amber;
+      case 'path':      return C.green;
+      default:          return C.border;
+    }
+  }).attr('stroke-width', (d, i) => {
+    switch (edgeState[i]) {
+      case 'exploring': return 3;
+      case 'path':      return 4;
+      default:          return 2;
+    }
+  }).attr('filter', (d, i) => {
+    if (edgeState[i] === 'path')      return 'url(#glowGreen)';
+    if (edgeState[i] === 'exploring') return 'url(#glowAmber)';
+    return null;
+  }).attr('opacity', (d, i) => edgeState[i] === 'idle' ? 0.4 : 1);
+}
+
+function edgeIndex(u, v) {
+  return linkData.findIndex(l =>
+    (l.source.id === u && l.target.id === v) ||
+    (l.source.id === v && l.target.id === u)
+  );
+}
+
+/* ── Log helper ─────────────────────────────────────────────────── */
+const logEl = document.getElementById('algoLog');
+function log(msg, color) {
+  const line = document.createElement('div');
+  line.style.color = color || C.muted;
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+function setStatus(msg) {
+  document.getElementById('algoStatus').textContent = msg;
+}
+
+/* ── Main animation runner ──────────────────────────────────────── */
+function runAnimation(src, dst) {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  clearLog();
+  resetVisual();
+
+  const adj = buildAdj(rawNodes, rawEdges);
+  if (!adj[src] || !adj[dst]) {
+    log(`// Node not in graph`, C.red); return;
+  }
+
+  const { steps, dist, prev } = dijkstraSteps(adj, src, dst);
+  const path = reconstructPath(prev, src, dst);
+
+  nodeState[src] = 'src';
+  nodeState[dst] = 'dst';
+  applyNodeStyles();
+
+  setStatus('RUNNING…');
+  log(`// Dijkstra: ${src} → ${dst}`, C.amber);
+  log(`// ${rawNodes.length} nodes · ${rawEdges.length} edges`, C.muted);
+  log('', C.muted);
+
+  const STEP_MS = 420;
+  let i = 0;
+
+  function tick() {
+    if (i >= steps.length) {
+      // Draw final path
+      if (path.length > 1) {
+        path.forEach(n => { if (n !== src && n !== dst) nodeState[n] = 'path'; });
+        for (let k = 0; k < path.length - 1; k++) {
+          const ei = edgeIndex(path[k], path[k+1]);
+          if (ei >= 0) edgeState[ei] = 'path';
+        }
+        applyNodeStyles();
+        applyEdgeStyles();
+        const totalDist = dist[dst] === Infinity ? '∞' : dist[dst];
+        log('', C.muted);
+        log(`// ✓ PATH FOUND: ${path.join(' → ')}`, C.green);
+        log(`// DISTANCE: ${totalDist} km`, C.green);
+        setStatus('PATH FOUND ✓');
+      } else {
+        log(`// ✗ NO PATH from ${src} to ${dst}`, C.red);
+        setStatus('NO PATH ✗');
+      }
+      return;
+    }
+
+    const step = steps[i++];
+
+    if (step.type === 'visit') {
+      if (step.node !== src && step.node !== dst) nodeState[step.node] = 'visited';
+      const d = step.allDist[step.node];
+      log(`  VISIT  ${step.node}   dist=${d === Infinity ? '∞' : d}`, C.amber);
+      // Show dist badge
+      nodeLabelSel.filter(nd => nd.id === step.node)
+        .text(d === Infinity ? '' : d + 'km')
+        .attr('fill', C.amber);
+      // Light up all edges from this node
+      rawEdges.forEach((e, idx) => {
+        if (e.from === step.node || e.to === step.node) {
+          if (edgeState[idx] !== 'path') edgeState[idx] = 'exploring';
+        }
+      });
+    } else if (step.type === 'relax') {
+      if (step.node !== src && step.node !== dst) nodeState[step.node] = 'queued';
+      log(`  RELAX  ${step.node}   via ${step.via}   new_dist=${step.newDist}`, C.blue);
+      nodeLabelSel.filter(nd => nd.id === step.node)
+        .text(step.newDist + 'km')
+        .attr('fill', C.blue);
+      const ei = edgeIndex(step.via, step.node);
+      if (ei >= 0 && edgeState[ei] !== 'path') edgeState[ei] = 'exploring';
+    }
+
+    applyNodeStyles();
+    applyEdgeStyles();
+    animTimer = setTimeout(tick, STEP_MS);
+  }
+
+  tick();
+}
+
+/* ── Auto-run if server returned a path result ──────────────────── */
+window.addEventListener('load', () => {
+  // Wait for force sim to settle a bit before animating
+  sim.on('end', () => {
+    if (PATH_RESULT && PATH_RESULT.success && FROM_LOC && TO_LOC) {
+      setTimeout(() => runAnimation(FROM_LOC, TO_LOC), 400);
+    } else {
+      resetVisual();
+    }
+  });
+
+  // Fallback if sim takes too long to end
+  setTimeout(() => {
+    if (PATH_RESULT && PATH_RESULT.success && FROM_LOC && TO_LOC) {
+      runAnimation(FROM_LOC, TO_LOC);
+    } else {
+      resetVisual();
+    }
+  }, 2500);
+});
+
+/* ── Form submit: animate before server round-trip ─────────────── */
+document.getElementById('pathForm').addEventListener('submit', function(e) {
+  const src = document.getElementById('selFrom').value;
+  const dst = document.getElementById('selTo').value;
+  if (src && dst && src !== dst) {
+    runAnimation(src, dst);
+  }
+  // Let form submit normally — server returns authoritative result
+});
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+document.getElementById('btnResetZoom').addEventListener('click', () => {
+  svg.transition().duration(500).call(
+    zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1)
+  );
+});
+
+document.getElementById('btnClearPath').addEventListener('click', () => {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  clearLog();
+  resetVisual();
+  setStatus('IDLE');
+  log('// Cleared. Select nodes or use the form to run Dijkstra.', C.muted);
+});
+
+/* ── Resize ─────────────────────────────────────────────────────── */
+const ro = new ResizeObserver(() => {
+  width  = canvas.clientWidth;
+  height = canvas.clientHeight;
+  sim.force('center', d3.forceCenter(width / 2, height / 2)).alpha(0.1).restart();
+});
+ro.observe(canvas);
+
+</script>
 {% endblock %}
