@@ -973,7 +973,7 @@ void loadRoadsFromFile() {
 }
 
 void saveUsersToFile() {
-    ofstream file("users.txt");
+    ofstream file("db/users.txt");
     for (const auto& u : users)
         file << u.second.getId() << "," << u.second.getName() << "\n";
     file.close();
